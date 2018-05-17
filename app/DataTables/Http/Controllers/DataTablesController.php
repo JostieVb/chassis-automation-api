@@ -121,7 +121,7 @@ class DataTablesController extends Controller
      *
      */
     protected function truncate() {
-        $dataTables = ['ca_product', 'ca_customer', 'entry'];
+        $dataTables = ['ca_product', 'entry', 'form', 'link', 'process'];
         foreach ($dataTables as $dataTable) {
             DB::table($dataTable)->truncate();
         }

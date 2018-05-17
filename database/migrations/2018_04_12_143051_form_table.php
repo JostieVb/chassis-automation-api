@@ -13,7 +13,7 @@ class FormTable extends Migration
      */
     public function up()
     {
-        Schema::table('form', function (Blueprint $table) {
+        Schema::create('form', function (Blueprint $table) {
             $table->increments('id');
             $table->string('identifier');
             $table->string('name');

@@ -13,13 +13,13 @@ class EntryTable extends Migration
      */
     public function up()
     {
-        Schema::table('entry', function (Blueprint $table) {
+        Schema::create('entry', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('recipient_id');
             $table->integer('sender_id');
             $table->integer('process_id');
+            $table->string('caller');;
             $table->integer('task_id');
-            $table->string('caller');
             $table->string('db_table');
             $table->integer('content_id');
             $table->timestamp('date');
@@ -28,7 +28,6 @@ class EntryTable extends Migration
             $table->string('status');
             $table->string('deleted');
             $table->string('unread');
-            $table->string('title');
             $table->timestamps();
         });
     }

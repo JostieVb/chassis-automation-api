@@ -13,7 +13,7 @@ class LinkTable extends Migration
      */
     public function up()
     {
-        Schema::table('link', function (Blueprint $table) {
+        Schema::create('link', function (Blueprint $table) {
             $table->increments('id');
             $table->string('caller_name');
             $table->integer('process_id');

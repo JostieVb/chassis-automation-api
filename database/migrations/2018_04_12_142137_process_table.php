@@ -13,7 +13,7 @@ class ProcessTable extends Migration
      */
     public function up()
     {
-        Schema::table('process', function (Blueprint $table) {
+        Schema::create('process', function (Blueprint $table) {
             $table->increments('id');
             $table->string('code');
             $table->string('name');
