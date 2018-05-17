@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Admin',
             'email' => 'admin@chassis-automation.com',
             'password' => bcrypt('admin'),
-            'permissions' => 'automation,products,processes,dashboard,forms,data-tables,entries'
+            'permissions' => 'dashboard,entries,automation,processes,forms,data-tables'
         ],
         [
             'name' => 'Logistics',
@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Supplier',
             'email' => 'supplier@chassis-automation.com',
             'password' => bcrypt('admin'),
-            'permissions' => 'products,entries'
+            'permissions' => 'dashboard,entries,products'
         ]
         ]);
 

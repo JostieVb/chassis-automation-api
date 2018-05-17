@@ -18,16 +18,16 @@ class EntryTable extends Migration
             $table->integer('recipient_id');
             $table->integer('sender_id');
             $table->integer('process_id');
-            $table->string('caller');;
-            $table->integer('task_id');
-            $table->string('db_table');
-            $table->integer('content_id');
-            $table->timestamp('date');
-            $table->string('label');
-            $table->longText('response_message');
-            $table->string('status');
-            $table->string('deleted');
-            $table->string('unread');
+            $table->string('caller', 50);
+            $table->string('task_id', 50);
+            $table->string('db_table', 50)->nullable();
+            $table->integer('content_id')->nullable();
+            $table->timestamp('date')->useCurrent();
+            $table->string('label')->default('Not completed');
+            $table->longText('response_message')->nullable();
+            $table->string('status')->default('not-completed');
+            $table->string('deleted', 5)->default('false');
+            $table->string('unread', 5)->default('true');
             $table->timestamps();
         });
     }

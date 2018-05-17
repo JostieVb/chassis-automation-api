@@ -15,13 +15,13 @@ class ProcessTable extends Migration
     {
         Schema::create('process', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('code');
-            $table->string('name');
-            $table->longText('process_xml');
-            $table->longText('process_json');
-            $table->longText('properties');
-            $table->string('deploy');
-            $table->string('deleted');
+            $table->string('code', 50);
+            $table->string('name', 200);
+            $table->longText('process_xml')->nullable();
+            $table->longText('process_json')->nullable();
+            $table->longText('properties')->nullable();
+            $table->string('deploy', 5)->default('false');
+            $table->string('deleted', 5)->default('false');
             $table->timestamps();
         });
     }

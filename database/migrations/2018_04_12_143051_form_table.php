@@ -15,11 +15,11 @@ class FormTable extends Migration
     {
         Schema::create('form', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('identifier');
-            $table->string('name');
-            $table->string('db_table');
+            $table->string('identifier', 50);
+            $table->string('name', 50);
+            $table->string('db_table', 50)->nullable();
             $table->longText('structure');
-            $table->string('deleted');
+            $table->string('deleted', 5)->default('false');
             $table->timestamps();
         });
     }

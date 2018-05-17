@@ -15,7 +15,7 @@ class LinkTable extends Migration
     {
         Schema::create('link', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('caller_name');
+            $table->string('caller_name', 200);
             $table->integer('process_id');
             $table->timestamps();
         });
