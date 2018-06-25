@@ -3,11 +3,12 @@
 namespace App\Entries\Http\Controllers;
 
 use App\Auth\Models\Users;
+use App\Bpmn\Models\BpmnContent;
+use App\Forms\Models\Form;
 use App\Http\Controllers\Controller;
 use App\Entries\Models\Entry;
 use Illuminate\Support\Facades\Auth;
 use App\Processes\Models\Process;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class EntriesController extends Controller
@@ -55,7 +56,10 @@ class EntriesController extends Controller
         foreach ($entries as $entry) {
             $properties = Process::select('properties')->where('id', $entry['process_id'])->pluck('properties')->first();
             $properties = json_decode($properties, true);
-            $entry->title = $properties[$entry['task_id']]['title'];
+            $entry->title = '[No subject]';
+            if (isset($properties[$entry['task_id']]['subject'])) {
+                $entry->title = $properties[$entry['task_id']]['subject'];
+            }
         }
         return $entries;
     }
@@ -76,21 +80,29 @@ class EntriesController extends Controller
         $taskId = $entry['task_id'];
         $recipientId = $entry['recipient_id'];
         $senderId = $entry['sender_id'];
-        $dbTable = $entry['db_table'];
+        $form = $entry['caller'];
         $contentId = $entry['content_id'];
         $properties = Process::select('properties')->where('id', $processId)->pluck('properties')->first();
         $properties = json_decode($properties, true);
-        $entry['title'] = $properties[$taskId]['title'];
-        $entry['decisions'] = $properties[$taskId]['decisions'];
+        $entry['title'] = '[No subject]';
+        if (isset($properties[$taskId]['subject'])) {
+            $entry['title'] = $properties[$taskId]['subject'];
+        }
+        $entry['decisions'] = [];
+        if (isset($properties[$taskId]['decisions'])) {
+            $entry['decisions'] = $properties[$taskId]['decisions'];
+        }
         if ($senderId == 0) {
             $entry['sender'] = 'System';
         } else {
             $entry['sender'] = Users::select('name')->where('id', $senderId)->pluck('name')->first();
         }
         $entry['recipient'] = Users::select('name')->where('id', $recipientId)->pluck('name')->first();
-        $entry['content'] = [];
-        if ($dbTable && $contentId) {
-            $entry['content'] = $this->getEntryContent($dbTable, $contentId);
+        $entry['attached-contents'] = [];
+        if ($contentId && $properties[$taskId]['attach-form-contents']) {
+            $array = [];
+            array_push($array, array('type' => 'form-contents', 'id' => $contentId, 'title' => 'Attached content'));
+            $entry['attached-contents'] = $array;
         }
         $entry['message'] = $this->formatText($properties[$taskId]['message'], $entry);
         Entry::where('id', $id)->update(['unread' => 'false']);
@@ -128,29 +140,22 @@ class EntriesController extends Controller
     }
 
     /**
-     * Get posted form content of corresponding entry
+     * Get attachment of type form contents
      *
-     * @param   string      $dbTable
-     * @param   number      $contentId
+     * @param   string      $form
+     * @param   number      $id
      * @return  mixed
      */
-    private function getEntryContent($dbTable, $contentId) {
-        $content = DB::table($dbTable)->where('id', $contentId)->get()[0];
-        $keys = [];
-        $values = [];
-        foreach ($content as $key => $value) {
-            if (substr($key, 0, 3) == 'ca_') {
-                $newKey = substr($key, 3, strlen($key));
-                array_push($keys, $newKey);
-                array_push($values, $value);
-            }
-            if ($key == 'status') {
-                array_push($keys, 'status');
-                array_push($values, $value);
+    protected function getFormContentsAttachment($contentId, $form) {
+        $form = json_decode(Form::where('identifier', $form)->pluck('structure')->first(), true);
+        $fields = [];
+        foreach ($form as $id => $field) {
+            if ($field['type'] !== 'title' && $field['type'] !== 'subtitle') {
+                $fields[$id] = $field['name'];
             }
         }
-        $data = ['keys' => $keys, 'values' => $values];
-        return $data;
+        $content = json_decode(BpmnContent::where('id', $contentId)->pluck('data')->first(), true);
+        return array('keys' => $fields, 'values' => $content);
     }
 
     /**

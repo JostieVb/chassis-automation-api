@@ -2,11 +2,13 @@
 
 namespace App\Processes\Http\Controllers;
 
+use App\Auth\Models\Users;
 use App\Http\Controllers\Controller;
 use App\Processes\Models\Process;
 use Illuminate\Http\Request;
 use Nathanmac\Utilities\Parser\Facades\Parser;
 use App\Bpmn\Models\Link;
+use App\Forms\Models\Form;
 
 class ProcessesController extends Controller
 {
@@ -17,7 +19,11 @@ class ProcessesController extends Controller
      */
     protected function getProcesses() {
         $processes = Process::where('deleted', 'false')->get();
-        return response()->json($processes, 200);
+        $output = [];
+        foreach ($processes as $process) {
+            $output[$process['id']] = $process;
+        }
+        return response()->json($output, 200);
     }
 
     /**
@@ -39,6 +45,22 @@ class ProcessesController extends Controller
     }
 
     /**
+     * Check if a process code already exists
+     *
+     * @param   request $request
+     * @return  string  true | false
+     */
+    protected function checkProcessCode(Request $request) {
+        if ($request) {
+            $code = $request['code'];
+            if (Process::where('code', $code)->count() > 0) {
+                return 'true';
+            }
+            return 'false';
+        }
+    }
+
+    /**
      * Add new process from request
      *
      * @param   mixed   $request
@@ -52,8 +74,8 @@ class ProcessesController extends Controller
             $process->process_xml = $request['process_xml'];
             $process->process_json = json_encode(Parser::xml($request['process_xml']));
             $process->properties = $request['properties'];
+            $process->caller = $request['caller'];
             $process->save();
-            $this->linkProcessToCaller($request['callers'], $process->id);
             return response()->json(['message' => 'Successfully saved', 'id' => $process->id, 'status' => 200], 200);
         }
         return response()->json(['message' => 'Could not create new process', 'status' => 500], 500);
@@ -70,27 +92,15 @@ class ProcessesController extends Controller
             Process::where('id', $request['id'])->update([
                 'name' => $request['name'],
                 'code' => $request['code'],
+                'caller' => $request['caller'],
                 'process_xml' => $request['process_xml'],
                 'process_json' => json_encode(Parser::xml($request['process_xml'])),
                 'properties' => $request['properties']
             ]);
-            $this->linkProcessToCaller($request['callers'], $request['id']);
 
             return response()->json(['message' => 'Successfully saved', 'status' => 200], 200);
         }
         return response()->json(['message' => 'Could not save process', 'status' => 500], 500);
-    }
-
-    private function linkProcessToCaller($callers, $id) {
-        foreach($callers as $caller) {
-            $check = Link::where([['caller_name', $caller], ['process_id', $id]])->count();
-            if ($check == 0) {
-                $link = new Link();
-                $link->caller_name = $caller;
-                $link->process_id = $id;
-                $link->save();
-            }
-        }
     }
 
     /**
@@ -133,5 +143,31 @@ class ProcessesController extends Controller
         } else {
             return response()->json(['message' => 'Something went wrong', 'status' => 500], 500);
         }
+    }
+
+    /**
+     * Get the forms that can be linked as callers to a process
+     *
+     * @return  mixed    an array of forms
+     */
+    protected function getForms() {
+        $ids = Form::all('identifier');
+        $output = [];
+        foreach ($ids as $id) {
+            array_push($output, array('value' => $id['identifier'], 'label' => $id['identifier']));
+        }
+        return $output;
+    }
+
+    /**
+     * Get all users that can be assigned to a task
+     */
+    protected function getUsers() {
+        $users = Users::all();
+        $output = [array('value' => 'initiator', 'label' => 'Process initiator')];
+        foreach ($users as $user) {
+            array_push($output, array('value' => $user['id'], 'label' => $user['name']));
+        }
+        return $output;
     }
 }

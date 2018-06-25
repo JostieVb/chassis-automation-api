@@ -9,68 +9,54 @@ use App\Forms\Models\Form;
 class FormsController extends Controller
 {
     /**
-     * Decide what action should be taken based on postForm 'action'
+     * Save an existing form in the database
      *
      * @param   mixed     $request
      * @return  mixed
      */
-    protected function postForm(Request $request) {
+    protected function saveForm(Request $request) {
         if ($request) {
-            $this->validate($request, [
-                'form_name' => 'required',
-                'db_table' => 'required',
-                'structure' => 'required'
+            $data = $request['form'];
+            Form::where('id', $data['id'])->update([
+                'name' => $data['name'],
+                'identifier' => $data['identifier'],
+                'structure' => json_encode($data['structure'])
             ]);
-            if($request['action'] == 'add') {
-                return $this->addForm($request);
-            } else if($request['action'] == 'save') {
-                return $this->saveForm($request);
-            }
-            return response()->json(['message' => 'No action set', 'status' => 500], 500);
+            return response()->json(['message' => 'Successfully saved', 'status' => 200], 200);
         } else {
             return response()->json(['message' => 'Something went wrong', 'status' => 500], 500);
         }
     }
 
     /**
-     * Create new instance of Form object and add it to the database
+     * Save a new form in the database
      *
      * @param   mixed     $request
      * @return  mixed
      */
-    private function addForm(Request $request) {
-        $this->validate($request, [
-            'identifier' => 'required|unique:form'
-        ]);
-        $form = new Form();
-        $form->name = $request['form_name'];
-        $form->identifier = $request['identifier'];
-        $form->db_table = $request['db_table'];
-        $form->structure = json_encode($request['structure']);
-        $form->save();
-        return response()->json(['message' => 'Successfully added', 'status' => 200], 200);
+    protected function saveNewForm(Request $request) {
+        if ($request) {
+            $data = $request['form'];
+            return $data;
+        } else {
+            return response()->json(['message' => 'Something went wrong', 'status' => 500], 500);
+        }
     }
 
-    /**
-     * Save instance by 'identifier' in the database
-     *
-     * @param   mixed     $request
-     * @return  mixed
-     */
-    private function saveForm(Request $request) {
-        $checkId = Form::where('identifier', $request['identifier'])->pluck('id');
-        if ($checkId->count() > 0) {
-            if ($checkId[0] !== $request['id']) {
-                return response()->json(['message' => 'The given data was invalid.','errors' => ['identifier' => ['The identifier has already been taken.']]], 422);
+    protected function newForm(Request $request) {
+        if ($request) {
+            $data = $request['form'];
+            $form = new Form();
+            $form->identifier = $data['identifier'];
+            $form->name = $data['name'];
+            $form->structure = '{}';
+            if ($form->save()) {
+                return response()->json(['message' => 'New form successfully saved', 'id' => $form->id, 'status' => 200], 200);
             }
+            return response()->json(['message' => 'Could not save the form', 'status' => 500], 500);
+        } else {
+            return response()->json(['message' => 'Something went wrong', 'status' => 500], 500);
         }
-        Form::where('id', $request['id'])->update([
-            'name' => $request['form_name'],
-            'identifier' => $request['identifier'],
-            'db_table' => $request['db_table'],
-            'structure' => json_encode($request['structure'])
-        ]);
-        return response()->json(['message' => 'Successfully saved', 'status' => 200], 200);
     }
 
     /**
@@ -79,8 +65,28 @@ class FormsController extends Controller
      * @return  mixed
      */
     protected function getForms() {
-        $forms = Form::all();
+        $forms = Form::where('deleted', 'false')->get();
         return response()->json($forms, 200);
+    }
+
+    /**
+     * Get form fields by id
+     *
+     * @param  integer    $id
+     */
+    protected function getFormFields($id) {
+        $fields = Form::where('identifier', $id);
+        $output = response()->json(['message' => 'Could not find form for \''.$id.'\'', 'status' => 400], 400);
+        if ($fields->count() > 0) {
+            $fields = json_decode($fields->first()['structure'], true);
+            $output = [];
+            foreach ($fields as $id => $field) {
+                if ($field['type'] != 'title' && $field['type'] != 'subtitle') {
+                    array_push($output, array('label' => $field['name'], 'value' => $id));
+                }
+            }
+        }
+        return $output;
     }
 
     /**
@@ -97,6 +103,13 @@ class FormsController extends Controller
         return response()->json($form, 200);
     }
 
+    protected function deleteForm($id) {
+      if (Form::where('id', $id)->update(['deleted' => 'true'])) {
+        return response()->json(['message' => 'Form successfully deleted', 'status' => 200], 200);
+      }
+      return response()->json(['message' => 'Something went wrong', 'status' => 500], 500);
+    }
+
     /**
      * Get an array of form 'identifiers'
      *
@@ -105,5 +118,13 @@ class FormsController extends Controller
     protected function getFormIds() {
         $ids = Form::select('identifier')->get();
         return response()->json($ids, 200);
+    }
+
+    protected function checkUniqueIdentifier($id) {
+        $count = Form::where('identifier', $id)->count();
+        if ($count > 0) {
+            return 'true';
+        }
+        return 'false';
     }
 }

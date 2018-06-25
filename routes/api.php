@@ -17,6 +17,9 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::get('/processes', '\App\Processes\Http\Controllers\ProcessesController@getProcesses');
         Route::post('/processes/new', '\App\Processes\Http\Controllers\ProcessesController@newProcess');
         Route::post('/processes/save', '\App\Processes\Http\Controllers\ProcessesController@saveProcess');
+        Route::get('/processes/get-forms', '\App\Processes\Http\Controllers\ProcessesController@getForms');
+        Route::get('/processes/get-users', '\App\Processes\Http\Controllers\ProcessesController@getUsers');
+        Route::post('/processes/check-process-code', '\App\Processes\Http\Controllers\ProcessesController@checkProcessCode');
         Route::get('/delete-process/{id}', '\App\Processes\Http\Controllers\ProcessesController@deleteProcess');
         Route::get('/deploy/{id}', '\App\Processes\Http\Controllers\ProcessesController@deployProcess');
         Route::get('/undeploy/{id}', '\App\Processes\Http\Controllers\ProcessesController@undeployProcess');
@@ -36,14 +39,20 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::post('/delete-entry', '\App\Entries\Http\Controllers\EntriesController@deleteEntry');
         Route::get('/entries/{id}', '\App\Entries\Http\Controllers\EntriesController@getEntry');
         Route::get('/entries/filter/{filter}', '\App\Entries\Http\Controllers\EntriesController@getEntriesByFilter');
-        Route::get('/entries-get-process/{id}', '\App\Entries\Http\Controllers\EntriesController@getProcess');
+        Route::get('/entries-get-process/{id}/{form}', '\App\Entries\Http\Controllers\EntriesController@getProcess');
+        Route::get('/entries/attachment/form-contents/{id}/{form}', '\App\Entries\Http\Controllers\EntriesController@getFormContentsAttachment');
     });
 
     Route::group(['middleware' => 'permission:forms'], function () {
-        Route::post('/forms/form', '\App\Forms\Http\Controllers\FormsController@postForm');
+        Route::post('/forms/new-form', '\App\Forms\Http\Controllers\FormsController@newForm');
+        Route::post('/forms/save-form', '\App\Forms\Http\Controllers\FormsController@saveForm');
+        Route::post('/forms/save-new-form', '\App\Forms\Http\Controllers\FormsController@saveNewForm');
+        Route::get('/forms/delete/{id}', '\App\Forms\Http\Controllers\FormsController@deleteForm');
         Route::get('/forms/get-forms', '\App\Forms\Http\Controllers\FormsController@getForms');
+        Route::get('/forms/get-form-fields/{id}', '\App\Forms\Http\Controllers\FormsController@getFormFields');
         Route::get('/forms/get-form/{id}', '\App\Forms\Http\Controllers\FormsController@getForm');
         Route::get('/forms/get-form-ids', '\App\Forms\Http\Controllers\FormsController@getFormIds');
+        Route::get('/forms/check-unique-identifier/{id}', '\App\Forms\Http\Controllers\FormsController@checkUniqueIdentifier');
     });
 
     Route::group(['middleware' => 'permission:data-tables'], function () {
@@ -77,3 +86,4 @@ Route::group(['middleware' => 'auth:api'], function () {
 */
     Route::post('/user/signup', '\App\Auth\Http\Controllers\UserController@signUp');
     Route::get('truncate', '\App\DataTables\Http\Controllers\DataTablesController@truncate');
+    Route::get('/entries/content/{form}/{contentId}', '\App\Entries\Http\Controllers\EntriesController@getEntryContent');
